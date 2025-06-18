@@ -189,13 +189,15 @@ export default function UserManagement() {
     };
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto space-y-6">
+    <div className="pt-20 h-screen p-6 max-w-screen-xl mx-auto space-y-6">
+      <div className="flex flex-col items-center space-y-4">
       <h1 className="text-3xl font-bold">Quản lý người dùng</h1>
 
       <div className="flex gap-3">
         <button className="bg-blue-600 px-4 py-2 text-white rounded" onClick={() => setShowAddPopup(true)}>Thêm user</button>
         <button className="bg-yellow-500 px-4 py-2 text-white rounded" onClick={handleEditClick}>Sửa user</button>
         <button className="bg-red-600 px-4 py-2 text-white rounded" onClick={handleDelete}>Xoá user</button>
+      </div>
       </div>
 
       <input
@@ -231,7 +233,7 @@ export default function UserManagement() {
       {showAddPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md space-y-4">
-            <h2 className="text-xl font-bold">Thêm user mới</h2>
+            <h2 className="text-xl text-black font-bold">Thêm user mới</h2>
             <input className="w-full p-2 border rounded" placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
             <input className="w-full p-2 border rounded" placeholder="Tên" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} />
             <input className="w-full p-2 border rounded" placeholder="Mật khẩu" type="text" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />

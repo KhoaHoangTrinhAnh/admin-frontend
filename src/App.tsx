@@ -52,17 +52,16 @@ function App() {
 
   return (
     <Router>
+      <div className="w-screen">
       <div>
-        {/* Header */}
         {token && role && (
-          <header style={{ padding: "10px", background: "#eee", display: "flex", gap: "20px" }}>
+          <header className="mx-auto" style={{position: "fixed", top: 0, left: 0, right: 0, padding: "10px", background: "#eee", display: "flex", gap: "20px", justifyContent: "center", alignItems: "center", zIndex: 50}}>
             {role === "admin" && <Link to="/users">Quản lý người dùng</Link>}
             {(role === "admin" || role === "editor") && <Link to="/contents">Quản lý nội dung</Link>}
             <button onClick={handleLogout}>Đăng xuất</button>
           </header>
         )}
 
-        {/* Routes */}
         <main style={{ padding: "20px" }}>
           <Routes>
             <Route path="/login" element={<AdminLogin />} />
@@ -94,7 +93,7 @@ function App() {
             />
           </Routes>
         </main>
-      </div>
+      </div></div>
     </Router>
   );
 }

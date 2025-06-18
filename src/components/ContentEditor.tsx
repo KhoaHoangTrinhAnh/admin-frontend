@@ -1,11 +1,12 @@
 // D:\admin-frontend\src\components\ContentEditor.tsx
 import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
+// import { io } from "socket.io-client";
 import socket from "../socket";
 
 interface Block {
   type: "text" | "image" | "video";
   value: string;
+  file?: File;   // chỉ dùng tạm trước khi upload
 }
 
 interface Content {
@@ -26,14 +27,15 @@ export default function ContentEditor() {
   const [blockFileUrl, setBlockFileUrl] = useState("");
   const [previewFile, setPreviewFile] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editBlocks, setEditBlocks] = useState<Block[]>([]);
   const [editBlockType, setEditBlockType] = useState<Block['type']>("text");
-
   const [pendingBlockValue, setPendingBlockValue] = useState(""); // text hoặc URL file
   const [isUploadingEdit, setIsUploadingEdit] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
 
   useEffect(() => {
@@ -55,9 +57,8 @@ export default function ContentEditor() {
       socket.off("updateContent");
     };
   }, []);
-
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+//--------------------------Xử lý sửa nội dung--------------------------
+  const handleSelectFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -71,58 +72,30 @@ export default function ContentEditor() {
       return;
     }
 
+    setSelectedFile(file);
     setPreviewFile(URL.createObjectURL(file));
-    setIsUploading(true); // Bắt đầu upload
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch(`http://localhost:3000/contents/upload?type=${blockType}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: formData,
-      });
-
-      const data = await res.json();
-      console.log("Upload response:", data);
-      if (!data.url) {
-        alert("Không nhận được URL sau khi upload.");
-        setIsUploading(false);
-        return;
-      }
-      setBlockFileUrl(data.url);
-    } catch (err) {
-      alert("Tải file thất bại");
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   const handleAddBlock = () => {
-    // Kiểm tra loại block
-    let value = "";
+    //let value = "";
 
     if (blockType === "text") {
-      if (!blockValue.trim()) {
-        alert("Bạn chưa nhập nội dung cho block văn bản.");
-        return;
-      }
-      value = blockValue.trim();
-    } else {
-      if (!blockFileUrl) {
-        alert(`Bạn chưa upload file ${blockType}`);
-        return;
-      }
-      value = blockFileUrl;
+    if (!blockValue.trim()) {
+      alert("Bạn chưa nhập nội dung cho block văn bản.");
+      return;
     }
 
-    setNewBlocks([...newBlocks, { type: blockType, value }]);
+    setNewBlocks([...newBlocks, { type: "text", value: blockValue.trim() }]);
+  } else {
+    if (!selectedFile) {
+      alert(`Bạn chưa chọn file ${blockType}`);
+      return;
+    }
+    setNewBlocks([...newBlocks, { type: blockType, value: "", file: selectedFile }]);
+  }
     setBlockValue("");
-    setBlockFileUrl("");
     setPreviewFile("");
+    setSelectedFile(null);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) fileInput.value = "";
     setBlockType("text");
@@ -131,12 +104,37 @@ export default function ContentEditor() {
   const handleSubmitAdd = async () => {
     if (!newTitle.trim() || newBlocks.length === 0) return alert("Điền đầy đủ tiêu đề và block");
 
-    const newContent: Content = {
-      title: newTitle,
-      blocks: newBlocks,
-    };
-
     try {
+       setIsSubmitting(true);
+      const processedBlocks = await Promise.all(
+        newBlocks.map(async (block) => {
+          if (block.type === "text") return block;
+
+          if (!block.file) throw new Error(`Thiếu file cho block ${block.type}`);
+
+          const formData = new FormData();
+          formData.append("file", block.file);
+
+          const res = await fetch(`http://localhost:3000/contents/upload?type=${block.type}`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+            body: formData,
+          });
+
+          const data = await res.json();
+          if (!data.url) throw new Error("Không nhận được URL sau khi upload.");
+
+          return { type: block.type, value: data.url };
+        })
+      );
+
+      const newContent: Content = {
+        title: newTitle,
+        blocks: processedBlocks,
+      };
+
       const res = await fetch("http://localhost:3000/contents", {
         method: "POST",
         headers: {
@@ -147,20 +145,22 @@ export default function ContentEditor() {
       });
 
       const saved = await res.json();
-      if (!res.ok) throw new Error(saved.message || 'Lỗi khi lưu nội dung');
+      if (!res.ok) throw new Error(saved.message || "Lỗi khi lưu nội dung");
 
       socket.emit("submit-content", saved);
 
-      alert("Đăng nội dung thành công");
+      // Reset form
       setShowAddPopup(false);
       setNewTitle("");
       setNewBlocks([]);
     } catch (err) {
       console.error("Submit failed", err);
       alert("Đăng nội dung thất bại");
-    }
+    } finally {
+    setIsSubmitting(false);
+  }
   };
-// 
+//--------------------------Xử lý xoá nội dung--------------------------
   const handleDelete = async () => {
     if (!selectedContentId) {
     alert("Hãy chọn ít nhất 1 nội dung để xoá");
@@ -301,10 +301,10 @@ const handleSubmitEdit = async () => {
 
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">Quản lý nội dung</h1>
+    <div className="pt-20 h-screen max-w-screen-xl mx-auto flex flex-col items-center space-y-6">
+      <h1 className="mx-auto text-3xl font-bold">Quản lý nội dung</h1>
 
-      <div className="flex flex-wrap gap-4">
+      <div className="mx-auto flex flex-wrap gap-4">
         <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => setShowAddPopup(true)}>Thêm nội dung</button>
         <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={handleDelete}>Xoá nội dung</button>
         <button className="px-4 py-2 bg-yellow-500 text-white rounded" onClick={handleEditClick}>Sửa nội dung</button>
@@ -367,7 +367,7 @@ const handleSubmitEdit = async () => {
                   <input
                     type="file"
                     accept={blockType === "image" ? "image/*" : "video/*"}
-                    onChange={handleUpload}
+                    onChange={handleSelectFile}
                   />
                   <button
                     className="text-sm text-red-500 underline"
@@ -406,21 +406,40 @@ const handleSubmitEdit = async () => {
 
             <button
               className={`px-4 py-2 bg-blue-600 text-white rounded ${isUploading ? 'cursor-wait opacity-70' : 'cursor-pointer'}`}
-              onClick={handleAddBlock}
-              disabled={isUploading}>
+              onClick={handleAddBlock}>
               Thêm block
             </button>
-
-            <div className="space-y-2">
-              {newBlocks.map((b, idx) => (
+              {newBlocks.map((b: any, idx: number) => (
                 <div key={idx} className="border p-2 rounded bg-gray-50 text-black">
-                  <strong>{b.type}</strong>: {b.value}
+                  <strong>{b.type}</strong>:{" "}
+                  {b.type === "text" ? (
+                    b.value
+                  ) : b.value ? (
+                    b.type === "image" ? (
+                      <img src={b.value} alt="Uploaded" className="max-w-xs mt-2" />
+                    ) : b.type === "video" ? (
+                      <video src={b.value} controls className="max-w-xs mt-2" />
+                    ) : (
+                      <a
+                        href={b.value}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        Xem file
+                      </a>
+                    )
+                  ) : b.file ? (
+                    b.file.name
+                  ) : (
+                    "Không có dữ liệu"
+                  )}
                 </div>
               ))}
-            </div>
-
             <div className="flex gap-2">
-              <button className="px-6 py-2 bg-green-600 text-white rounded" onClick={handleSubmitAdd}>Submit</button>
+              <button className={`px-6 py-2 bg-green-600 text-white rounded ${isSubmitting ? 'cursor-wait opacity-70' : ''}`} disabled={isSubmitting} onClick={handleSubmitAdd}>
+                {isSubmitting ? 'Đang upload...' : 'Submit'}
+              </button>
               <button className="px-6 py-2 bg-gray-400 text-white rounded" onClick={() => setShowAddPopup(false)}>Huỷ</button>
             </div>
           </div>
@@ -431,7 +450,7 @@ const handleSubmitEdit = async () => {
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md space-y-4">
             <h2 className="text-xl font-bold text-red-600">Xác nhận xoá</h2>
-            <p>Bạn có chắc chắn muốn xoá nội dung này không?</p>
+            <p className="text-black">Bạn có chắc chắn muốn xoá nội dung này không?</p>
             <div className="flex justify-end gap-3">
               <button className="px-4 py-2 bg-gray-400 text-white rounded" onClick={() => setShowDeleteConfirm(false)}>Huỷ</button>
               <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={handleConfirmDelete}>Xoá</button>
