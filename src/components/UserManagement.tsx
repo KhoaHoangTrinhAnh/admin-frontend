@@ -1,6 +1,5 @@
 // D:\admin-frontend\src\components\UserManagement.tsx
-import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
+import { useCallback, useEffect, useState } from "react";
 import socket from "../socket";
 
 interface User {
@@ -26,32 +25,30 @@ export default function UserManagement() {
 
   const token = localStorage.getItem("access_token");
 
-  const fetchUsers = async () => {
-  try {
-    const res = await fetch("http://localhost:3000/users", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setUsers(data);
-    } else {
-      console.error("Lỗi lấy danh sách người dùng:", data.message);
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:3000/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUsers(data);
+      } else {
+        console.error("Lỗi lấy danh sách người dùng:", data.message);
+      }
+    } catch (error) {
+      console.error("Fetch users failed:", error);
     }
-  } catch (error) {
-    console.error("Fetch users failed:", error);
-  }
-};
+  }, [token]);
 
   useEffect(() => {
     if (token) fetchUsers();
-
     socket.on("usersUpdated", fetchUsers);
-
     return () => {
     socket.off("usersUpdated", fetchUsers);
   };
 
-  }, [token]);
+  }, [token, fetchUsers]);
 
   const handleSubmitAdd = async () => {
     if (!newUser.email || !newUser.password || !newUser.name) {
@@ -96,9 +93,11 @@ export default function UserManagement() {
       await fetchUsers();  // cập nhật lại danh sách người dùng
       setShowAddPopup(false);
       setNewUser({ email: "", name: "", password: "", role: "client" });
-    } catch (err) {
-      alert("Tạo user thất bại");
-    }
+      } catch (err) {
+        console.error("Đăng ký user thất bại:", err);
+        alert("Tạo user thất bại");
+      }
+
   };
 
   const handleDelete = async () => {
@@ -117,9 +116,11 @@ export default function UserManagement() {
       setSelectedUserId(null);
       await fetchUsers();  // cập nhật lại danh sách người dùng
       alert("Xoá user thành công");
-    } catch (err) {
-      alert("Xoá user thất bại");
-    }
+} catch (err) {
+  console.error("Xoá user thất bại:", err);
+  alert("Xoá user thất bại");
+}
+
   };
 
 //--------------------------Xử lý sửa nội dung--------------------------
@@ -155,7 +156,7 @@ export default function UserManagement() {
     }
 
       const token = localStorage.getItem("access_token");
-      const updatedData: any = {
+      const updatedData: Partial<Pick<User, "email" | "name" | "role" | "password">> = {
         email: editUser.email,
         name: editUser.name,
         role: editUser.role,
@@ -184,8 +185,10 @@ export default function UserManagement() {
           alert("Cập nhật thất bại: " + data.message);
         }
       } catch (err) {
+        console.error("Cập nhật user thất bại:", err);
         alert("Cập nhật user thất bại");
       }
+
     };
 
   return (

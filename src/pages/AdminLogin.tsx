@@ -1,12 +1,10 @@
 // D:\admin-frontend\src\pages\AdminLogin.tsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,10 +37,19 @@ export default function AdminLogin() {
       } else {
         window.location.href = "/";
       }
-    } catch (err: any) {
-      alert(
-        err.response?.data?.message || err.message || "Đăng nhập thất bại"
-      );
+    } catch (err) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else if (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as any).response?.data?.message === 'string'
+      ) {
+        alert((err as any).response.data.message);
+      } else {
+        alert("Đăng nhập thất bại");
+      }
     }
   };
 

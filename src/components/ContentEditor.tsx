@@ -26,7 +26,6 @@ export default function ContentEditor() {
   const [blockValue, setBlockValue] = useState("");
   const [blockFileUrl, setBlockFileUrl] = useState("");
   const [previewFile, setPreviewFile] = useState<string>("");
-  const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
@@ -405,11 +404,11 @@ const handleSubmitEdit = async () => {
             )}
 
             <button
-              className={`px-4 py-2 bg-blue-600 text-white rounded ${isUploading ? 'cursor-wait opacity-70' : 'cursor-pointer'}`}
+              className={"px-4 py-2 bg-blue-600 text-white rounded cursor-pointer'}"}
               onClick={handleAddBlock}>
               Thêm block
             </button>
-              {newBlocks.map((b: any, idx: number) => (
+              {newBlocks.map((b: Block, idx: number) => (
                 <div key={idx} className="border p-2 rounded bg-gray-50 text-black">
                   <strong>{b.type}</strong>:{" "}
                   {b.type === "text" ? (
