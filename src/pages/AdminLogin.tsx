@@ -38,15 +38,10 @@ export default function AdminLogin() {
         window.location.href = "/";
       }
     } catch (err) {
-      if (err instanceof Error) {
+      if (axios.isAxiosError(err)) {
+        alert(err.response?.data?.message || err.message || "Đăng nhập thất bại");
+      } else if (err instanceof Error) {
         alert(err.message);
-      } else if (
-        typeof err === 'object' &&
-        err !== null &&
-        'response' in err &&
-        typeof (err as any).response?.data?.message === 'string'
-      ) {
-        alert((err as any).response.data.message);
       } else {
         alert("Đăng nhập thất bại");
       }
