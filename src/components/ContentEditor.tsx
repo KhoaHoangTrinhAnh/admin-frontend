@@ -36,9 +36,10 @@ export default function ContentEditor() {
   const [isUploadingEdit, setIsUploadingEdit] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    fetch("http://localhost:3000/contents", { headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}`, }})
+    fetch(`${API_URL}/contents`, { headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}`, }})
       .then((res) => res.json()).then(setContents);
 
     socket.on("newContent", (item: Content) => {
@@ -114,7 +115,7 @@ export default function ContentEditor() {
           const formData = new FormData();
           formData.append("file", block.file);
 
-          const res = await fetch(`http://localhost:3000/contents/upload?type=${block.type}`, {
+          const res = await fetch(`${API_URL}/contents/upload?type=${block.type}`, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -134,7 +135,7 @@ export default function ContentEditor() {
         blocks: processedBlocks,
       };
 
-      const res = await fetch("http://localhost:3000/contents", {
+      const res = await fetch(`${API_URL}/contents`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -176,7 +177,7 @@ export default function ContentEditor() {
   }
 
   try {
-    const res = await fetch(`http://localhost:3000/contents/${selectedContentId}`, {
+    const res = await fetch(`${API_URL}/contents/${selectedContentId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -207,7 +208,7 @@ const handlePendingFileChange = async (e: React.ChangeEvent<HTMLInputElement>) =
     formData.append("file", file);
     const type = editBlockType; // 'image' hoặc 'video'
 
-    const res = await fetch(`http://localhost:3000/contents/upload?type=${type}`, {
+    const res = await fetch(`${API_URL}/contents/upload?type=${type}`, {
       method: "POST",
       body: formData,
     });
@@ -269,7 +270,7 @@ const handleSubmitEdit = async () => {
   };
 
   try {
-    const res = await fetch(`http://localhost:3000/contents/${selectedContentId}`, {
+    const res = await fetch(`${API_URL}/contents/${selectedContentId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -346,9 +347,9 @@ const handleSubmitEdit = async () => {
       </table>
 
       {showAddPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-green-500 p-6 rounded shadow-lg w-full max-w-2xl space-y-4">
-            <h2 className="text-xl font-bold">Tạo nội dung mới</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" style={{ marginTop: 0 }}> 
+          <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl space-y-4">
+            <h2 className="text-xl text-blue-600 font-bold">Tạo nội dung mới</h2>
             <input className="w-full p-2 border rounded" placeholder="Tiêu đề" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
             <div className="flex items-center gap-2">
               <select
@@ -446,7 +447,7 @@ const handleSubmitEdit = async () => {
       )}
 
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" style={{ marginTop: 0 }}>
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md space-y-4">
             <h2 className="text-xl font-bold text-red-600">Xác nhận xoá</h2>
             <p className="text-black">Bạn có chắc chắn muốn xoá nội dung này không?</p>
@@ -459,9 +460,9 @@ const handleSubmitEdit = async () => {
       )}
 
       {showEditPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" style={{ marginTop: 0 }}>
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl space-y-4">
-            <h2 className="text-xl font-bold text-black">Chỉnh sửa nội dung</h2>
+            <h2 className="text-xl text-yellow-500 font-bold">Chỉnh sửa nội dung</h2>
 
             <input
               className="w-full p-2 border rounded"
@@ -472,7 +473,7 @@ const handleSubmitEdit = async () => {
 
             {editBlocks.map((block, index) => (
               <div key={index} className="border p-3 rounded bg-gray-100 space-y-2 relative">
-                <div className="text-sm font-semibold capitalize">{block.type}</div>
+                <div className="text-sm text-black font-semibold capitalize">{block.type}</div>
 
                 {block.type === 'text' ? (
                   <input
@@ -539,7 +540,6 @@ const handleSubmitEdit = async () => {
                   Thêm block
                 </button>
               </div>
-              {/* Bổ sung phần preview */}
               {pendingBlockValue && editBlockType !== 'text' && (
                 <div className="mt-2">
                   {editBlockType === 'image' ? (

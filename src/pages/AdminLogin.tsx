@@ -5,11 +5,12 @@ import axios from 'axios';
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const loginRes = await axios.post("http://localhost:3000/auth/login", {
+      const loginRes = await axios.post(`${API_URL}/auth/login`, {
         email,
         password,
       });
@@ -25,7 +26,7 @@ export default function AdminLogin() {
 
       console.log("Access token:", accessToken);
 
-      const meRes = await axios.get("http://localhost:3000/auth/me");
+      const meRes = await axios.get(`${API_URL}/auth/me`);
       const role = meRes.data?.role;
 
       localStorage.setItem("role", role);

@@ -1,4 +1,4 @@
-// src/components/ProtectedRoute.tsx
+// D:\admin-frontend\src\components\ProtectedRoute.tsx
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import axios from "axios";
@@ -13,6 +13,8 @@ export default function ProtectedRoute({ allowedRoles, children }: Props) {
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("access_token");
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     const fetchRole = async () => {
       if (!token) {
@@ -21,7 +23,7 @@ export default function ProtectedRoute({ allowedRoles, children }: Props) {
       }
 
       try {
-        const res = await axios.get("http://localhost:3000/auth/me", {
+        const res = await axios.get(`${API_URL}/auth/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

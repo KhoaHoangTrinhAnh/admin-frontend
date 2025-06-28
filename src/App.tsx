@@ -1,4 +1,4 @@
-// src/App.tsx
+// D:\admin-frontend\src\App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -7,6 +7,8 @@ import ContentEditor from "./components/ContentEditor";
 import AdminLogin from "./pages/AdminLogin";
 import UserManagement from "./components/UserManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function App() {
   const [role, setRole] = useState<string | null>(null);
@@ -29,7 +31,7 @@ function App() {
       }
 
       try {
-        const res = await axios.get("http://localhost:3000/auth/me", {
+        const res = await axios.get(`${API_URL}/auth/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

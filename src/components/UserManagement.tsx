@@ -25,9 +25,11 @@ export default function UserManagement() {
 
   const token = localStorage.getItem("access_token");
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:3000/users", {
+      const res = await fetch(`${API_URL}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -76,7 +78,7 @@ export default function UserManagement() {
     }
 
     try {
-      const res = await fetch("http://localhost:3000/users", {
+      const res = await fetch(`${API_URL}/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -107,7 +109,7 @@ export default function UserManagement() {
     }
 
     try {
-      await fetch(`http://localhost:3000/users/${selectedUserId}`, {
+      await fetch(`${API_URL}/users/${selectedUserId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -120,7 +122,6 @@ export default function UserManagement() {
   console.error("Xoá user thất bại:", err);
   alert("Xoá user thất bại");
 }
-
   };
 
 //--------------------------Xử lý sửa nội dung--------------------------
@@ -167,7 +168,7 @@ export default function UserManagement() {
       }
 
       try {
-        const res = await fetch(`http://localhost:3000/users/${editUser._id}`, {
+        const res = await fetch(`${API_URL}/users/${editUser._id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -179,7 +180,7 @@ export default function UserManagement() {
         if (res.ok) {
           setShowEditPopup(false);
           setEditUser(null);
-          socket.emit("usersUpdated"); // nếu cần chủ động
+          socket.emit("usersUpdated");
         } else {
           const data = await res.json();
           alert("Cập nhật thất bại: " + data.message);
@@ -234,7 +235,7 @@ export default function UserManagement() {
       </table>
 
       {showAddPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" style={{ marginTop: 0 }}>
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md space-y-4">
             <h2 className="text-xl text-black font-bold">Thêm user mới</h2>
             <input className="w-full p-2 border rounded" placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
@@ -254,7 +255,7 @@ export default function UserManagement() {
       )}
 
       {showEditPopup && editUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" style={{ marginTop: 0 }}>
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md space-y-4">
             <h2 className="text-xl text-black font-bold">Chỉnh sửa user</h2>
             <input className="w-full p-2 border rounded" placeholder="Email" value={editUser.email} onChange={(e) => setEditUser({ ...editUser, email: e.target.value })} />
